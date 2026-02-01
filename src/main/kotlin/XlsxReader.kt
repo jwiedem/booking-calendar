@@ -6,23 +6,44 @@ import java.io.File
 import java.io.FileInputStream
 import java.time.LocalDate
 import java.time.Month
+import java.time.Year
 
 object XlsxReader {
-    val maxIndex = 32
     val unbelegt = "unbelegt"
 
-    fun readBookings(file: File, apartmentName: String): List<Booking> {
+    fun readBookings(file: File, apartmentName: String, year: Year): List<Booking> {
         val bookings = mutableListOf<Booking>()
-        val fis = FileInputStream(file)
-        val workbook = XSSFWorkbook(fis)
+        val openBookings = mutableMapOf<String, LocalDate>()
+
+        val workbook = XSSFWorkbook(FileInputStream(file))
         val sheet = workbook.getSheetAt(0)
 
+        var monthIndex = 1
+
         for (row in sheet.drop(3)) {
-            var month = 1
-            if (row.getCell(0)?.stringCellValue?.isNotEmpty() == true) {
-                bookings.add(getBookings(row, Month.of(month++)))
+            if (row.getCell(0)?.stringCellValue?.isNotBlank() == true) {
+                val month = Month.of(monthIndex++)
+                processMonthRow(
+                    row,
+                    month,
+                    year,
+                    apartmentName,
+                    openBookings,
+                    bookings
+                )
             }
         }
+
+        // close remaining bookings at end of year
+        for ((guest, startDate) in openBookings) {
+            bookings += Booking(
+                guest,
+                apartmentName,
+                startDate,
+                startDate.withMonth(12).withDayOfMonth(31)
+            )
+        }
+
         return bookings
     }
 
@@ -36,37 +57,40 @@ object XlsxReader {
         }
     }
 
-    fun getBookings(row: Row, month: Month): List<Booking> {
-        val bookings = mutableListOf<Booking>()
-        var currentGuest: String? = null
-        var startDay = -1
+    fun processMonthRow(
+        row: Row,
+        month: Month,
+        year: Year,
+        apartment: String,
+        openBookings: MutableMap<String, LocalDate>,
+        bookings: MutableList<Booking>
+    ) {
+        val daysInMonth = month.length(year.isLeap)
 
-        for (column in 2..maxIndex) {
-            val currentDay = column - 1
+        for (day in 1..daysInMonth) {
+            val column = day + 1
             val guest = cellText(row.getCell(column))
 
-            if (guest != null) {
-                if (currentGuest == null) {
-                    currentGuest = guest
-                    startDay = currentDay
-                } else if (guest != currentGuest) {
-                    bookings.add(
-                        Booking(
-                        currentGuest,
-                        "Garten",
-                        LocalDate.of(26, month, startDay),
-                        LocalDate.of(26, month, currentDay - 1))
+            val date = LocalDate.of(year.value, month, day)
+
+            // Close bookings that disappear
+            for ((openGuest, startDate) in openBookings.toMap()) {
+                if (openGuest != guest) {
+                    bookings += Booking(
+                        openGuest,
+                        apartment,
+                        startDate,
+                        date
                     )
-                    if (guest != unbelegt) {
-                        currentGuest = guest
-                        startDay = currentDay
-                    } else {
-                        currentGuest = null
-                    }
+                    openBookings.remove(openGuest)
                 }
-                currentGuest = guest
+            }
+
+            // Open new booking
+            if (guest != null && guest != unbelegt && !openBookings.containsKey(guest)) {
+                openBookings[guest] = date
             }
         }
-        return bookings
     }
+
 }
