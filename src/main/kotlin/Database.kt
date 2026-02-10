@@ -14,4 +14,22 @@ object Database {
         }
         HikariDataSource(config)
     }
+
+    fun init() {
+        dataSource.connection.use { connection ->
+            connection.createStatement().use { statement ->
+                statement.execute(
+                    """
+                    create table if not exists bookings (
+                        id bigserial primary key,
+                        guest_name text not null,
+                        apartment_name text not null,
+                        start_date date not null,
+                        end_date date not null
+                    )
+                    """.trimIndent()
+                )
+            }
+        }
+    }
 }

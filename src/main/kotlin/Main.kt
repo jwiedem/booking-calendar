@@ -14,34 +14,47 @@ import java.time.Year
 @Composable
 @Preview
 fun App() {
-    var count by remember { mutableStateOf(0) }
     val bookings = remember { mutableStateOf<List<Booking>>(emptyList()) }
+    val displayYear = remember { Year.of(2026) }
 
     MaterialTheme {
         Column(modifier = Modifier.padding(16.dp)) {
             Text("Hello Michael!", style = MaterialTheme.typography.h5)
-            Spacer(modifier = androidx.compose.ui.Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(8.dp))
             Button(
                 onClick = {
-                    bookings.value = readBookings(
+                    val imported = readBookings(
                         File("src/main/resources/Belegungsplan_Garten - Kopie.xlsx"),
                         "Garten",
-                        Year.of(2026),
+                        displayYear,
                     )
+                    BookingRepository.saveBookings(imported)
+                    bookings.value = BookingRepository.loadBookings()
                 }
             ) {
-                Text("Load bookings")
+                Text("Import and save bookings")
+            }
+
+            Spacer(Modifier.height(8.dp))
+
+            Button(
+                onClick = {
+                    bookings.value = BookingRepository.loadBookings()
+                }
+            ) {
+                Text("Load bookings from database")
             }
 
             Spacer(Modifier.height(16.dp))
 
-            BookingCalendar(bookings.value)
+            BookingCalendar(bookings.value, displayYear)
         }
     }
 }
 
 fun main() = application {
-    Window(onCloseRequest = ::exitApplication, title = "Rental Calendar") {
+    Database.init()
+    Window(onCloseRequest = ::exitApplication, title = "Booking Calendar") {
         App()
     }
 }
