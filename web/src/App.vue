@@ -79,6 +79,17 @@ const monthNames = [
 
 const weekdayLabels = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"];
 
+const segmentRowHeight = 20;
+const segmentRowGap = 4;
+const apartmentPalette = ["#78c850", "#f2b05e", "#7fb7ff"];
+const apartmentBorderPalette = ["#4a9b2f", "#c0842a", "#2f6fb9"];
+
+const toApartmentClass = (name) =>
+    `booking-segment-${String(name || "unknown")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/(^-|-$)/g, "")}`;
+
 const months = computed(() => {
   const year = displayYear.value;
   return Array.from({ length: 12 }, (_, index) => {
@@ -106,11 +117,17 @@ const months = computed(() => {
       }
       const segStart = start < monthStart ? monthStart : start;
       const segEnd = end > monthEnd ? monthEnd : end;
-      const startIndex = segStart.getDate() - 1;
-      const length = segEnd.getDate() - segStart.getDate() + 1;
+      const startIndex = segStart.getDate();
+      let length;
+      if (end > monthEnd) {
+        length = segEnd.getDate() - segStart.getDate() + 1;
+      } else {
+        length = segEnd.getDate() - segStart.getDate();
+      }
       segments.push({
         startIndex,
         length,
+        apartmentClass: toApartmentClass(booking.apartmentName),
         guestName: booking.guestName,
       });
     }
@@ -118,7 +135,7 @@ const months = computed(() => {
       name: monthNames[index],
       days,
       segments,
-      colorClass: index % 2 === 0 ? "month-yellow" : "month-blue",
+      colorClass: index % 2 === 0 ? "month-blue" : "month-green",
     };
   });
 });
