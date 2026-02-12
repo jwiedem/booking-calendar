@@ -79,10 +79,8 @@ const monthNames = [
 
 const weekdayLabels = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"];
 
-const segmentRowHeight = 20;
+const segmentRowHeight = 24;
 const segmentRowGap = 4;
-const apartmentPalette = ["#78c850", "#f2b05e", "#7fb7ff"];
-const apartmentBorderPalette = ["#4a9b2f", "#c0842a", "#2f6fb9"];
 
 const toApartmentClass = (name) =>
     `booking-segment-${String(name || "unknown")
@@ -90,8 +88,21 @@ const toApartmentClass = (name) =>
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/(^-|-$)/g, "")}`;
 
+const apartmentNames = computed(() => {
+  const names = bookings.value
+    .map((booking) => booking.apartmentName)
+    .filter(Boolean);
+  return [...new Set(names)];
+});
+
 const months = computed(() => {
   const year = displayYear.value;
+  const apartmentIndex = new Map(
+    apartmentNames.value.map((name, index) => [name, index])
+  );
+  const apartmentCount = Math.max(1, apartmentNames.value.length);
+  const segmentStackHeight =
+    apartmentCount * segmentRowHeight + (apartmentCount - 1) * segmentRowGap;
   return Array.from({ length: 12 }, (_, index) => {
     const daysInMonth = new Date(year, index + 1, 0).getDate();
     const days = Array.from({ length: daysInMonth }, (_, dayIndex) => {
@@ -124,10 +135,13 @@ const months = computed(() => {
       } else {
         length = segEnd.getDate() - segStart.getDate();
       }
+      const aptName = booking.apartmentName || "Unknown";
+      const aptIndex = apartmentIndex.get(aptName) ?? 0;
       segments.push({
         startIndex,
         length,
-        apartmentClass: toApartmentClass(booking.apartmentName),
+        apartmentClass: toApartmentClass(aptName),
+        offsetPx: aptIndex * (segmentRowHeight + segmentRowGap),
         guestName: booking.guestName,
       });
     }
@@ -135,6 +149,7 @@ const months = computed(() => {
       name: monthNames[index],
       days,
       segments,
+      segmentStackHeight,
       colorClass: index % 2 === 0 ? "month-blue" : "month-green",
     };
   });

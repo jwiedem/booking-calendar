@@ -20,42 +20,44 @@ const props = defineProps({
       </div>
 
       <div class="month-days">
-        <div class="weekday-row">
+        <div class="grid-row">
           <div
               v-for="day in month.days"
               :key="day.date + '-wd'"
-              :class="['header-cell', month.colorClass]"
+              :class="['grid-cell', 'header-cell', month.colorClass]"
           > {{ day.weekdayLabel }}
           </div>
         </div>
 
-        <div class="daynumber-row">
+        <div class="grid-row">
           <div
               v-for="day in month.days"
               :key="day.date + '-dn'"
-              :class="['header-cell', month.colorClass]"
+              :class="['grid-cell', 'header-cell', month.colorClass]"
           >
             {{ day.dayNumber }}
           </div>
         </div>
 
-        <div class="booking-row">
+        <div class="booking-row" :style="{ '--booking-height': `${month.segmentStackHeight}px` }">
           <div class="booking-cells">
-            <div class="booking-cell spacer-booking-cell"></div>
+            <div class="grid-cell booking-cell spacer-booking-cell"></div>
             <div
               v-for="day in month.days"
               :key="day.date + '-bk'"
-              class="booking-cell"
+              class="grid-cell booking-cell"
               :class="day.isWeekend ? 'weekend' : 'weekday'"
             ></div>
           </div>
           <div class="booking-segments">
-            <div class="booking-segment-spacer"></div>
             <div
               v-for="(segment, index) in month.segments"
               :key="month.name + '-seg-' + index"
-              class="booking-segment-garten"
-              :style="{ gridColumn: `${segment.startIndex} / span ${segment.length}` }"
+              :class="['booking-segment', segment.apartmentClass]"
+              :style="{
+                gridColumn: `${segment.startIndex} / span ${segment.length}`,
+                '--segment-offset': `${segment.offsetPx}px`,
+              }"
             >
               <span class="booking-segment-text">
                 {{ segment.guestName }}
@@ -64,12 +66,12 @@ const props = defineProps({
           </div>
         </div>
 
-        <div class="daynumber-row">
-          <div class="header-cell spacer"></div>
+        <div class="grid-row">
+          <div class="grid-cell header-cell spacer"></div>
           <div
               v-for="day in [...month.days.slice(1), month.days[0]]"
               :key="day.date + '-dn'"
-              :class="['header-cell', month.colorClass]"
+              :class="['grid-cell', 'header-cell', month.colorClass]"
           >
             {{ day.dayNumber }}
           </div>
@@ -83,18 +85,23 @@ const props = defineProps({
 .calendar {
   display: grid;
   gap: 0;
+  --cell-size: 30px;
+  --header-height: 22px;
+  --booking-height: 36px;
+  --border-color: #cfcfcf;
+  --skew: 30deg;
 }
 
 .spacer {
   background: transparent;
-  border: 1px solid #cfcfcf; /* or none */
+  border: 1px solid var(--border-color);
 }
 
 .spacer-booking-cell {
-  height: 36px;
+  height: var(--booking-height);
   position: relative;
   overflow: hidden;
-  transform: skewX(38deg);
+  transform: skewX(var(--skew));
   transform-origin: left bottom;
 }
 
@@ -104,7 +111,7 @@ const props = defineProps({
 
 .month-label {
   width: 100px;
-  border: 1px solid #cfcfcf;
+  border: 1px solid var(--border-color);
   padding: 6px;
 }
 
@@ -122,34 +129,30 @@ const props = defineProps({
   display: inline-block;
 }
 
-.weekday-row{
+.grid-row {
   display: grid;
   grid-auto-flow: column;
-  grid-auto-columns: 28px;
-  width: max-content;
-}
-.daynumber-row {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: 28px;
+  grid-auto-columns: var(--cell-size);
   width: max-content;
 }
 
-.header-cell,
-.booking-cell {
-  border: 1px solid #cfcfcf;
-  width: 28px;
-  height: 22px;
+.grid-cell {
+  border: 1px solid var(--border-color);
+  width: var(--cell-size);
   display: grid;
   place-items: center;
   font-size: 12px;
 }
 
+.header-cell {
+  height: var(--header-height);
+}
+
 .booking-cell {
-  height: 36px;
+  height: var(--booking-height);
   position: relative;
   overflow: hidden;
-  transform: skewX(38deg);
+  transform: skewX(var(--skew));
   transform-origin: left bottom;
 }
 
@@ -158,12 +161,12 @@ const props = defineProps({
 }
 
 .weekday {
-  background: #117b91;;
+  background: #117b91;
 }
 
 .booking-row {
   position: relative;
-  height: 36px;
+  height: var(--booking-height);
   width: max-content;
 }
 
@@ -171,8 +174,8 @@ const props = defineProps({
 .booking-segments {
   display: grid;
   grid-auto-flow: column;
-  grid-auto-columns: 28px;
-  height: 36px;
+  grid-auto-columns: var(--cell-size);
+  height: var(--booking-height);
   width: max-content;
 }
 
@@ -183,35 +186,26 @@ const props = defineProps({
   border: 1px;
 }
 
-.booking-segment-spacer {
-  height: 36px;
+.booking-segment {
+  height: 15px;
+  display: flex;
+  align-items: center;
+  padding: 6px;
+  z-index: 0;
+  overflow: hidden;
+  transform: skewX(var(--skew));
+  transform-origin: left top;
 }
 
 .booking-segment-garten {
   background: #78c850;
   border: 1px solid #4a9b2f;
-  height: 12px;
-  display: flex;
-  align-items: center;
-  padding: 6px;
-  z-index: 0;
-  overflow: hidden;
-  transform: skewX(38deg);
-  transform-origin: left top;
 }
 
 .booking-segment-parkblick {
-  background: #78c850;
-  border: 1px solid #4a9b2f;
-  height: 12px;
-  display: flex;
-  align-items: center;
-  padding: 6px;
-  z-index: 0;
-  overflow: hidden;
-  transform: skewX(38deg);
-  transform: translateY(6px);
-  transform-origin: left top;
+  offset: 40px;
+  background: #ec992c;
+  border: 1px solid #af7120;
 }
 
 .booking-segment-text {
@@ -221,7 +215,7 @@ const props = defineProps({
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  transform: skewX(-38deg);
+  transform: skewX(calc(-1 * var(--skew)));
   transform-origin: left top;
 }
 
