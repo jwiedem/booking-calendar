@@ -39,7 +39,14 @@ const props = defineProps({
           </div>
         </div>
 
-        <div class="booking-row" :style="{ '--booking-height': `${month.segmentStackHeight}px` }">
+        <div
+          class="booking-row"
+          :style="{
+            '--booking-height': `${month.segmentStackHeight}px`,
+            '--segment-row-height': `${month.segmentRowHeight}px`,
+            '--segment-row-gap': `${month.segmentRowGap}px`,
+          }"
+        >
           <div class="booking-cells">
             <div class="grid-cell booking-cell spacer-booking-cell"></div>
             <div
@@ -56,7 +63,8 @@ const props = defineProps({
               :class="['booking-segment', segment.apartmentClass]"
               :style="{
                 gridColumn: `${segment.startIndex} / span ${segment.length}`,
-                '--segment-offset': `${segment.offsetPx}px`,
+                '--segment-offset-left': `${segment.offsetLeftPx ?? 0}px`,
+                gridRow: `${(segment.laneIndex ?? 0) + 1}`,
               }"
             >
               <span class="booking-segment-text">
@@ -89,7 +97,10 @@ const props = defineProps({
   --header-height: 22px;
   --booking-height: 36px;
   --border-color: #cfcfcf;
-  --skew: 30deg;
+  --skew: 20deg;
+  --segment-offset-left: 0px;
+  --segment-row-height: 24px;
+  --segment-row-gap: 4px;
 }
 
 .spacer {
@@ -97,13 +108,7 @@ const props = defineProps({
   border: 1px solid var(--border-color);
 }
 
-.spacer-booking-cell {
-  height: var(--booking-height);
-  position: relative;
-  overflow: hidden;
-  transform: skewX(var(--skew));
-  transform-origin: left bottom;
-}
+
 
 .month-row {
   display: flex;
@@ -180,32 +185,44 @@ const props = defineProps({
 }
 
 .booking-segments {
+  align-content: start;
   position: absolute;
   inset: 0;
   pointer-events: none;
   border: 1px;
+  transform: translateX(1px);
+  grid-auto-rows: var(--segment-row-height);
+  row-gap: var(--segment-row-gap);
 }
 
 .booking-segment {
-  height: 15px;
+  height: var(--segment-row-height);
   display: flex;
   align-items: center;
   padding: 6px;
   z-index: 0;
   overflow: hidden;
-  transform: skewX(var(--skew));
+  transform: translate(
+      var(--segment-offset-left),
+      0px
+    )
+    skewX(var(--skew));
   transform-origin: left top;
 }
 
 .booking-segment-garten {
-  background: #78c850;
+  background: rgba(120, 200, 80, 0.85);
   border: 1px solid #4a9b2f;
 }
 
 .booking-segment-parkblick {
-  offset: 40px;
-  background: #ec992c;
+  background: rgba(246, 117, 26, 0.89);
   border: 1px solid #af7120;
+}
+
+.booking-segment-weitblick {
+  background: rgba(67, 216, 183, 0.78);
+  border: 1px solid #20FFFF77;
 }
 
 .booking-segment-text {
