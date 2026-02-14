@@ -211,18 +211,18 @@ const props = defineProps({
 }
 
 .booking-segment-garten {
-  background: rgba(120, 200, 80, 0.85);
+  background: #A1CCA6;
   border: 1px solid #4a9b2f;
 }
 
 .booking-segment-parkblick {
-  background: rgba(246, 117, 26, 0.89);
+  background: #FCA47C;
   border: 1px solid #af7120;
 }
 
 .booking-segment-weitblick {
-  background: rgba(67, 216, 183, 0.78);
-  border: 1px solid #20FFFF77;
+  background: #F9D779;
+  border: 1px solid #F9D779;
 }
 
 .booking-segment-text {

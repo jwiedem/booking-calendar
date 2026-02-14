@@ -23,12 +23,24 @@ fun App() {
             Spacer(modifier = Modifier.height(8.dp))
             Button(
                 onClick = {
-                    val imported = readBookings(
+                    val garten = readBookings(
                         File("src/main/resources/Belegungsplan_Garten - Kopie.xlsx"),
                         "Garten",
                         displayYear,
                     )
-                    BookingRepository.saveBookings(imported)
+                    val parkblick = readBookings(
+                        File("src/main/resources/Belegungsplan_Parkblick - Kopie.xlsx"),
+                        "Parkblick",
+                        displayYear,
+                    )
+                    val weitblick = readBookings(
+                        File("src/main/resources/Belegungsplan_Weitblick - Kopie.xlsx"),
+                        "Weitblick",
+                        displayYear,
+                    )
+                    BookingRepository.saveBookings(garten)
+                    BookingRepository.saveBookings(parkblick)
+                    BookingRepository.saveBookings(weitblick)
                     bookings.value = BookingRepository.loadBookings()
                 }
             ) {
