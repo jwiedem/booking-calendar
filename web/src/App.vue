@@ -19,7 +19,8 @@ const loadBookings = async () => {
   try {
     const response = await fetch("/api/bookings");
     if (!response.ok) {
-      throw new Error("Failed to load bookings");
+      error.value = "Failed to load bookings";
+      return;
     }
     bookings.value = await response.json();
     if (bookings.value.length) {
@@ -44,13 +45,21 @@ const createBooking = async () => {
       body: JSON.stringify(form),
     });
     if (!response.ok) {
-      throw new Error("Failed to save booking");
+      error.value = "Failed to save booking";
+      return;
+    }
+    const created = await response.json();
+    const wasEmpty = bookings.value.length === 0;
+    bookings.value = [...bookings.value, created];
+    if (wasEmpty) {
+      displayYear.value = new Date(
+        `${created.startDate}T00:00:00`
+      ).getFullYear();
     }
     form.guestName = "";
     form.apartmentName = "";
     form.startDate = "";
     form.endDate = "";
-    await loadBookings();
   } catch (err) {
     error.value = err.message;
   } finally {
@@ -65,7 +74,7 @@ const displayYear = ref(new Date().getFullYear());
 const monthNames = [
   "Januar",
   "Februar",
-  "Marz",
+  "März",
   "April",
   "Mai",
   "Juni",
@@ -82,7 +91,7 @@ const weekdayLabels = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"];
 const segmentRowHeight = 24;
 const segmentRowGap = 4;
 const segmentLaneCount = 3;
-const segmentLaneRightShift = 10;
+const segmentLaneRightShift = 11;
 
 const toApartmentClass = (name) =>
     `booking-segment-${String(name || "unknown")
@@ -122,6 +131,7 @@ const months = computed(() => {
     const monthEnd = new Date(year, index, daysInMonth);
     const segments = [];
     for (const booking of bookings.value) {
+      const bookingId = booking.bookingId
       const start = new Date(`${booking.startDate}T00:00:00`);
       const end = new Date(`${booking.endDate}T00:00:00`);
       if (end < monthStart || start > monthEnd) {
@@ -146,6 +156,14 @@ const months = computed(() => {
         laneIndex,
         offsetLeftPx: laneIndex * segmentLaneRightShift,
         guestName: booking.guestName,
+        apartmentName: aptName,
+        bookingId: bookingId,
+        bookingStart: booking.startDate,
+        bookingEnd: booking.endDate,
+        totalNights: Math.max(
+          0,
+          Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))
+        ),
       });
     }
     return {

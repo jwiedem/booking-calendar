@@ -1,4 +1,6 @@
 <script setup>
+import { ref } from "vue";
+
 const props = defineProps({
   months: {
     type: Array,
@@ -9,6 +11,43 @@ const props = defineProps({
     required: false,
   },
 });
+
+const hoveredSegment = ref(null);
+const editSegment = ref(null);
+const tooltipStyle = ref({ top: "0px", left: "0px" });
+
+const editBooking = (segment) => {
+  editSegment.value = segment
+}
+
+const showTooltip = (segment, event) => {
+  hoveredSegment.value = segment;
+  moveTooltip(event);
+};
+
+const moveTooltip = (event) => {
+  const offset = 12;
+  const maxWidth = 260;
+  const maxHeight = 140;
+  let left = event.clientX + offset;
+  let top = event.clientY + offset;
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  if (left + maxWidth > vw) {
+    left = vw - maxWidth - offset;
+  }
+  if (top + maxHeight > vh) {
+    top = vh - maxHeight - offset;
+  }
+  tooltipStyle.value = {
+    left: `${Math.max(8, left)}px`,
+    top: `${Math.max(8, top)}px`,
+  };
+};
+
+const hideTooltip = () => {
+  hoveredSegment.value = null;
+};
 </script>
 
 <template>
@@ -60,12 +99,20 @@ const props = defineProps({
             <div
               v-for="(segment, index) in month.segments"
               :key="month.name + '-seg-' + index"
-              :class="['booking-segment', segment.apartmentClass]"
+              :class="['booking-segment',
+                segment.apartmentName === 'Garten' && 'booking-segment-garten',
+                segment.apartmentName === 'Parkblick' && 'booking-segment-parkblick',
+                segment.apartmentName === 'Weitblick' && 'booking-segment-weitblick',
+              ]"
               :style="{
                 gridColumn: `${segment.startIndex} / span ${segment.length}`,
                 '--segment-offset-left': `${segment.offsetLeftPx ?? 0}px`,
                 gridRow: `${(segment.laneIndex ?? 0) + 1}`,
               }"
+              @click="editBooking(segment, $event)"
+              @mouseenter="showTooltip(segment, $event)"
+              @mousemove="moveTooltip($event)"
+              @mouseleave="hideTooltip"
             >
               <span class="booking-segment-text">
                 {{ segment.guestName }}
@@ -87,6 +134,35 @@ const props = defineProps({
       </div>
     </div>
   </div>
+
+  <teleport to="body">
+    <div
+      v-if="hoveredSegment"
+      class="booking-tooltip booking-tooltip-floating"
+      role="tooltip"
+      :style="tooltipStyle"
+    >
+      <div class="tooltip-title">{{ hoveredSegment.guestName }}</div>
+      <div class="tooltip-row">
+        <span class="tooltip-label">BookingID</span>
+        <span class="tooltip-value">{{hoveredSegment.bookingId}}</span>
+      </div>
+      <div class="tooltip-row">
+        <span class="tooltip-label">Apartment</span>
+        <span class="tooltip-value">{{ hoveredSegment.apartmentName }}</span>
+      </div>
+      <div class="tooltip-row">
+        <span class="tooltip-label">Zeitraum</span>
+        <span class="tooltip-value">
+          {{ hoveredSegment.bookingStart }} - {{ hoveredSegment.bookingEnd }}
+        </span>
+      </div>
+      <div class="tooltip-row">
+        <span class="tooltip-label">Übernachtungen</span>
+        <span class="tooltip-value">{{ hoveredSegment.totalNights }}</span>
+      </div>
+    </div>
+  </teleport>
 </template>
 
 <style scoped>
@@ -97,7 +173,7 @@ const props = defineProps({
   --header-height: 22px;
   --booking-height: 36px;
   --border-color: #cfcfcf;
-  --skew: 20deg;
+  --skew: 21deg;
   --segment-offset-left: 0px;
   --segment-row-height: 24px;
   --segment-row-gap: 4px;
@@ -130,7 +206,7 @@ const props = defineProps({
 }
 
 .month-days {
-  overflow-x: auto;
+  overflow-x: clip;
   display: inline-block;
 }
 
@@ -162,11 +238,11 @@ const props = defineProps({
 }
 
 .weekend {
-  background: #078f70;
+  background: var(--calendar-theme-green);
 }
 
 .weekday {
-  background: #117b91;
+  background: var(--calendar-theme-blue);
 }
 
 .booking-row {
@@ -188,9 +264,8 @@ const props = defineProps({
   align-content: start;
   position: absolute;
   inset: 0;
-  pointer-events: none;
   border: 1px;
-  transform: translateX(1px);
+  transform: translateX(-1px);
   grid-auto-rows: var(--segment-row-height);
   row-gap: var(--segment-row-gap);
 }
@@ -200,8 +275,9 @@ const props = defineProps({
   display: flex;
   align-items: center;
   padding: 6px;
-  z-index: 0;
-  overflow: hidden;
+  z-index: 10;
+  overflow: visible;
+  position: relative;
   transform: translate(
       var(--segment-offset-left),
       0px
@@ -210,25 +286,10 @@ const props = defineProps({
   transform-origin: left top;
 }
 
-.booking-segment-garten {
-  background: #A1CCA6;
-  border: 1px solid #4a9b2f;
-}
-
-.booking-segment-parkblick {
-  background: #FCA47C;
-  border: 1px solid #af7120;
-}
-
-.booking-segment-weitblick {
-  background: #F9D779;
-  border: 1px solid #F9D779;
-}
-
 .booking-segment-text {
   font-size: 11px;
   color: #0f2b0f;
-  padding: 50px;
+  padding: 5px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -236,11 +297,44 @@ const props = defineProps({
   transform-origin: left top;
 }
 
-.month-blue {
+.booking-tooltip {
+  position: fixed;
+  width: 220px;
+  padding: 10px 12px;
+  border-radius: 10px;
   background: #3a8797;
+  color: #f5f5f5;
+  box-shadow: 0 12px 24px rgb(2, 67, 87);
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: none;
+  z-index: 1000;
 }
 
-.month-green {
-  background: #18987c;
+.tooltip-title {
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  z-index: 50;
 }
+
+.tooltip-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  line-height: 1.4;
+  z-index: 50;
+}
+
+.tooltip-label {
+  color: #aab3bd;
+  margin-right: 8px;
+}
+
+.tooltip-value {
+  color: #f5f5f5;
+  text-align: right;
+  z-index: 50;
+}
+
 </style>

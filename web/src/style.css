@@ -1,5 +1,7 @@
 * {
   box-sizing: border-box;
+  --calendar-theme-blue: #1a8a8a;
+  --calendar-theme-green: #0c9f7f;
 }
 
 body {
@@ -10,7 +12,7 @@ body {
 }
 
 #app {
-  max-width: 900px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 24px;
 }
@@ -79,4 +81,27 @@ td {
 
 .muted {
   color: #666;
+}
+
+.month-blue {
+  background: var(--calendar-theme-blue);
+}
+
+.month-green {
+  background: var(--calendar-theme-green);
+}
+
+.booking-segment-garten {
+  background: #A1CCA6;
+  border: 1px solid #4a9b2f;
+}
+
+.booking-segment-parkblick {
+  background: #FCA47C;
+  border: 1px solid #af7120;
+}
+
+.booking-segment-weitblick {
+  background: #ffd961;
+  border: 1px solid #ca9f1a;
 }
